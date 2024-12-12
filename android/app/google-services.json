@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "128505410285",
+    "project_id": "proyekshoes-f8b62",
+    "storage_bucket": "proyekshoes-f8b62.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128505410285:android:a7bc08db9325d970cd92e4",
+        "android_client_info": {
+          "package_name": "com.example.sepatu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtGfL7_VM7JIsi_aFEXD4gq_04_Y7dSOE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
