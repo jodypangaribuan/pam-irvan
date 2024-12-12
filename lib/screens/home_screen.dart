@@ -38,8 +38,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.white,
       endDrawer: const ProfileDrawer(),
       body: _screens[_selectedIndex],
+      extendBody: true, // Add this to make body extend behind navbar
       bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // Change from white to transparent
         color: Colors.black,
         buttonBackgroundColor: Colors.black,
         height: 60,
@@ -167,19 +168,30 @@ class _ShopTabState extends State<ShopTab> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      bottom: false, // Add this to prevent safe area padding at bottom
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
             floating: true,
             elevation: 0,
-            backgroundColor: Colors.white,
-            title: Text(
-              'KICKS',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    letterSpacing: 2,
-                  ),
+            backgroundColor: Colors.transparent, // Change to transparent
+            title: Row(
+              children: [
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 24,
+                  width: 46,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'SEPATU',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        letterSpacing: 2,
+                      ),
+                ),
+              ],
             ),
             actions: [
               IconButton(
@@ -232,7 +244,8 @@ class _ShopTabState extends State<ShopTab> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.only(
+                bottom: 80, left: 16, right: 16), // Updated padding
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -317,34 +330,40 @@ class _ShopTabState extends State<ShopTab> {
         children: [
           Expanded(
             flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16)),
-                gradient: LinearGradient(
-                  colors: [Colors.grey[100]!, Colors.grey[200]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: CachedNetworkImage(
+                    imageUrl: 'https://via.placeholder.com/300',
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Image.network(
-                      'https://via.placeholder.com/150',
-                      fit: BoxFit.cover,
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Iconsax.heart,
+                      color: Colors.black54,
+                      size: 20,
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: IconButton(
-                      icon: const Icon(Iconsax.heart, color: Colors.black54),
-                      onPressed: () {},
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -405,9 +424,11 @@ class FavoritesTab extends StatelessWidget {
       slivers: [
         SliverAppBar(
           floating: true,
-          title: const Text('Favorites',
-              style:
-                  TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: const Text('My Wishlist',
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24)),
           backgroundColor: Colors.white,
           elevation: 0,
           actions: [
@@ -419,27 +440,16 @@ class FavoritesTab extends StatelessWidget {
         ),
         SliverPadding(
           padding: const EdgeInsets.all(16),
-          sliver: SliverList(
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+            ),
             delegate: SliverChildBuilderDelegate(
-              (context, index) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Slidable(
-                  endActionPane: ActionPane(
-                    motion: const ScrollMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (_) {},
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'Remove',
-                      ),
-                    ],
-                  ),
-                  child: _buildFavoriteItem(),
-                ),
-              ),
-              childCount: 5,
+              (context, index) => _buildFavoriteItem(),
+              childCount: 6,
             ),
           ),
         ),
@@ -449,10 +459,9 @@ class FavoritesTab extends StatelessWidget {
 
   Widget _buildFavoriteItem() {
     return Container(
-      height: 120,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -461,45 +470,83 @@ class FavoritesTab extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius:
-                const BorderRadius.horizontal(left: Radius.circular(12)),
-            child: CachedNetworkImage(
-              imageUrl: 'https://via.placeholder.com/120',
-              width: 120,
-              height: 120,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Container(color: Colors.white),
-              ),
+          Expanded(
+            flex: 3,
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(15)),
+                  child: CachedNetworkImage(
+                    imageUrl: 'https://via.placeholder.com/200',
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(color: Colors.white),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child:
+                        const Icon(Iconsax.heart5, color: Colors.red, size: 20),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
+            flex: 2,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Limited Edition Sneaker',
+                    'Nike Air Max',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '\$199.99',
-                    style: TextStyle(
-                      color: Colors.grey[800],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '\$199.99',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Iconsax.shopping_bag,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -521,14 +568,18 @@ class CartTab extends StatelessWidget {
         SliverAppBar(
           floating: true,
           title: const Text('Shopping Cart',
-              style:
-                  TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24)),
           backgroundColor: Colors.white,
           elevation: 0,
           actions: [
-            IconButton(
-              icon: const Icon(Iconsax.profile_circle, color: Colors.black),
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            TextButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              label:
+                  const Text('Clear All', style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -545,35 +596,33 @@ class CartTab extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: Padding(
+          child: Container(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
               children: [
-                const Divider(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '\$599.97',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildSummaryRow('Subtotal', '\$599.97'),
+                const SizedBox(height: 8),
+                _buildSummaryRow('Shipping', '\$10.00'),
+                const SizedBox(height: 8),
+                _buildSummaryRow('Tax', '\$25.00'),
+                const Divider(height: 24),
+                _buildSummaryRow('Total', '\$634.97', isTotal: true),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 54,
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
@@ -583,7 +632,7 @@ class CartTab extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Checkout',
+                      'Proceed to Checkout',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -600,12 +649,33 @@ class CartTab extends StatelessWidget {
     );
   }
 
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 16,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 16,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCartItem() {
     return Container(
-      height: 120,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -616,21 +686,21 @@ class CartTab extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius:
-                const BorderRadius.horizontal(left: Radius.circular(12)),
-            child: Hero(
-              tag: 'product-image',
-              child: CachedNetworkImage(
-                imageUrl: 'https://via.placeholder.com/120',
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Shimmer.fromColors(
-                  baseColor: Colors.grey[300]!,
-                  highlightColor: Colors.grey[100]!,
-                  child: Container(color: Colors.white),
-                ),
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(15)),
+            ),
+            child: CachedNetworkImage(
+              imageUrl: 'https://via.placeholder.com/120',
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Shimmer.fromColors(
+                baseColor: Colors.grey[300]!,
+                highlightColor: Colors.grey[100]!,
+                child: Container(color: Colors.white),
               ),
             ),
           ),
@@ -639,21 +709,40 @@ class CartTab extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Limited Edition Sneaker',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Nike Air Max 270',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 2,
+                        ),
+                      ),
+                      Icon(Icons.delete_outline, color: Colors.red),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Size: 42 EU',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         '\$199.99',
                         style: TextStyle(
-                          color: Colors.grey[800],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                       Container(
@@ -664,14 +753,14 @@ class CartTab extends StatelessWidget {
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              onPressed: () => HapticFeedback.selectionClick(),
+                              icon: const Icon(Icons.remove, size: 16),
+                              onPressed: () {},
                             ),
                             const Text('1',
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             IconButton(
-                              icon: const Icon(Icons.add, size: 18),
-                              onPressed: () => HapticFeedback.selectionClick(),
+                              icon: const Icon(Icons.add, size: 16),
+                              onPressed: () {},
                             ),
                           ],
                         ),
