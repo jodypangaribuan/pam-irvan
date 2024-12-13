@@ -45,9 +45,25 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
-          title: 'Sepatu App',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          title: 'Sepatu',
+          theme: ThemeData(
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.grey[50],
+            primarySwatch: Colors.grey,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: Colors.grey[900],
+            primarySwatch: Colors.grey,
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.grey[900],
+              elevation: 0,
+            ),
+          ),
           themeMode:
               themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           initialRoute: '/login',

@@ -16,7 +16,7 @@ class FormWidgets {
 
       return Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF34495E) : Colors.white,
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -86,7 +86,7 @@ class FormWidgets {
         decoration: BoxDecoration(
           gradient: isDark
               ? const LinearGradient(
-                  colors: [Color(0xFF34495E), Color(0xFF2C3E50)],
+                  colors: [Colors.white24, Colors.white10],
                 )
               : null,
           color: isDark ? null : Colors.black,

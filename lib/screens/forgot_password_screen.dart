@@ -44,8 +44,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF2C3333);
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.grey[600];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: isDark ? Colors.grey[900] : Colors.grey[50],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -55,14 +59,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 const SizedBox(height: 20),
                 IconButton(
-                  icon: const Icon(Iconsax.arrow_left),
+                  icon: Icon(Iconsax.arrow_left,
+                      color: isDark ? Colors.white : Colors.black),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Forgot Password',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: const Color(0xFF2C3333),
+                        color: textColor,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
                       ),
@@ -71,7 +76,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   'Enter your email to reset password',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey[600],
+                        color: secondaryTextColor,
                         fontSize: 16,
                       ),
                 ),

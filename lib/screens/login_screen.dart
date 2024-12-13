@@ -29,9 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final backgroundColor = isDark ? Colors.grey[900] : Colors.grey[50];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -45,6 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'assets/images/logo.png',
                     height: 120,
                     width: 120,
+                    color: isDark ? Colors.white : null,
                   ),
                 ),
                 const SizedBox(height: 40),
