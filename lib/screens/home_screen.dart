@@ -7,6 +7,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../widgets/profile_drawer.dart';
 import 'detail_screen.dart';
 
@@ -197,18 +198,21 @@ class _ShopTabState extends State<ShopTab> {
               children: [
                 Image.asset(
                   'assets/images/logo.png',
-                  height: 24,
-                  width: 46,
+                  height: 20, // Reduced from 24
+                  width: 40, // Reduced from 46
                   color: isDark ? Colors.white : null,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6), // Reduced from 8
                 Text(
-                  'SEPATU',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                        letterSpacing: 2,
-                      ),
+                  'Sneaker Shop',
+                  style: GoogleFonts.montserrat(
+                    // Changed from poppins to montserrat
+                    fontSize: 18, // Reduced from 24
+                    fontWeight: FontWeight.w700, // Changed from w900
+                    color: isDark ? Colors.white : Colors.black,
+                    letterSpacing: 2, // Reduced from 3
+                    height: 1,
+                  ),
                 ),
               ],
             ),
@@ -426,7 +430,7 @@ class _ShopTabState extends State<ShopTab> {
                   children: [
                     Text(
                       'Limited Edition',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                         color: isDark ? Colors.white : Colors.black87,
@@ -437,11 +441,12 @@ class _ShopTabState extends State<ShopTab> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           '\$199.99',
-                          style: TextStyle(
+                          style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
+                            color: isDark ? Colors.white70 : Colors.black87,
                           ),
                         ),
                         Container(

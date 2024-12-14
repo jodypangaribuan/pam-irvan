@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key});
@@ -133,19 +134,20 @@ class _DetailScreenState extends State<DetailScreen>
                                       children: [
                                         Text(
                                           'Nike Air Max 270',
-                                          style: TextStyle(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 28,
                                             fontWeight: FontWeight.bold,
                                             color: isDark
                                                 ? Colors.white
                                                 : Colors.black,
                                             height: 1.2,
+                                            letterSpacing: -0.5,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
                                           'Running Collection',
-                                          style: TextStyle(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             color: isDark
                                                 ? Colors.white60
@@ -271,7 +273,7 @@ class _DetailScreenState extends State<DetailScreen>
       children: [
         Text(
           'Available Colors',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : Colors.black,
@@ -323,7 +325,7 @@ class _DetailScreenState extends State<DetailScreen>
       children: [
         Text(
           'Select Size',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : Colors.black,
@@ -410,7 +412,7 @@ class _DetailScreenState extends State<DetailScreen>
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'The Nike Air Max 270 delivers visible cushioning under every step. Updated for modern comfort, it nods to the original 1991 Air Max 180 with its exaggerated tongue top and heritage tongue logo.',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     color: isDark ? Colors.white70 : Colors.grey[800],
                     height: 1.6,
                     fontSize: 15,

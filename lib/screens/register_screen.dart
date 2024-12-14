@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import '../widgets/form_widgets.dart';
 
@@ -72,19 +73,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'Create Account',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: textColor,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign up to get started',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: secondaryTextColor,
-                        fontSize: 16,
-                      ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: secondaryTextColor,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 Form(
@@ -137,17 +139,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         children: [
                           Text(
                             'Already have an account?',
-                            style: TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.grey[600],
                               fontSize: 15,
                             ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text(
+                            child: Text(
                               'Sign In',
-                              style: TextStyle(
-                                color: Color(0xFF34495E),
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF34495E),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),

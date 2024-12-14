@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../widgets/form_widgets.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -66,19 +67,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'Forgot Password',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: textColor,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                      ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Enter your email to reset password',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: secondaryTextColor,
-                        fontSize: 16,
-                      ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: secondaryTextColor,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 Form(
@@ -109,7 +111,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             'Back to Sign In',
-                            style: TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.grey[700],
                               fontWeight: FontWeight.w500,
                               fontSize: 15,
