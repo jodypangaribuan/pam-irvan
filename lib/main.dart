@@ -38,7 +38,9 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         Provider(create: (_) => AuthService()),
-        Provider(create: (_) => ProductService()), // Add this line
+        ChangeNotifierProvider(
+            create: (_) =>
+                ProductService()), // Change from Provider to ChangeNotifierProvider
       ],
       child: const MyApp(),
     ),
@@ -106,6 +108,8 @@ class MyApp extends StatelessWidget {
             '/home': (context) => const HomeScreen(),
             '/admin-dashboard': (context) => const AdminDashboardScreen(),
             '/forgot-password': (context) => const ForgotPasswordScreen(),
+            '/cart': (context) =>
+                const HomeScreen(initialTab: 2), // Add this line
           },
           debugShowCheckedModeBanner: false,
         );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:sepatu/services/product_service.dart';
 import 'dart:convert';
 import '../models/product_model.dart';
 
@@ -32,6 +34,7 @@ class _DetailScreenState extends State<DetailScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? Colors.grey[900] : Colors.grey[50];
+    final productService = Provider.of<ProductService>(context);
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -253,6 +256,115 @@ class _DetailScreenState extends State<DetailScreen>
                               ),
                             ),
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[850] : Colors.white,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      StreamBuilder<List<String>>(
+                        stream: productService.watchWishlist(),
+                        builder: (context, snapshot) {
+                          final isInWishlist =
+                              snapshot.data?.contains(widget.product.id) ??
+                                  false;
+                          return Container(
+                            width: 60,
+                            height: 60,
+                            margin: const EdgeInsets.only(right: 16),
+                            child: IconButton(
+                              onPressed: () => productService
+                                  .toggleWishlist(widget.product.id),
+                              icon: Icon(
+                                isInWishlist
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: isInWishlist
+                                    ? Colors.red
+                                    : (isDark ? Colors.white : Colors.black),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: selectedSize == null
+                                    ? null
+                                    : () {
+                                        productService
+                                            .addToCart(widget.product, 1,
+                                                selectedSize!)
+                                            .then((_) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Added to cart'),
+                                              duration: Duration(seconds: 1),
+                                            ),
+                                          );
+                                        });
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[200],
+                                  foregroundColor: Colors.black,
+                                  elevation: 0,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: const Text('Add to Cart'),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: selectedSize == null
+                                    ? null
+                                    : () async {
+                                        await productService.addToCart(
+                                            widget.product, 1, selectedSize!);
+                                        if (context.mounted) {
+                                          // Replace pushNamed with pushReplacementNamed
+                                          Navigator.pushReplacementNamed(
+                                              context, '/cart');
+                                        }
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                ),
+                                child: const Text('Buy Now'),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

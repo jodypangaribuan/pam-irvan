@@ -35,7 +35,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   File? _collectionImageFile;
 
   // Add these properties at the top with other properties
-  String _selectedCollection = '';
+  final String _selectedCollection = '';
 
   Future<void> _handleLogout() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -248,47 +248,47 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStats(),
-          const SizedBox(height: 16),
-          _buildCollectionManager(), // Add this
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween, // Changed to spaceBetween
-              children: [
-                Row(
-                  children: [
-                    Icon(Iconsax.box,
-                        color: isDark ? Colors.white70 : Colors.grey[800]),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Manage Products',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
+      body: SingleChildScrollView(
+        // Add SingleChildScrollView
+        child: Column(
+          children: [
+            _buildStats(),
+            const SizedBox(height: 16),
+            _buildCollectionManager(),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Iconsax.box,
+                          color: isDark ? Colors.white70 : Colors.grey[800]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Manage Products',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  onPressed: () => _showAddItemDialog(context),
-                  icon: Icon(
-                    Icons.add_circle,
-                    color: isDark ? Colors.white : Colors.black,
-                    size: 28,
+                    ],
                   ),
-                ),
-              ],
+                  IconButton(
+                    onPressed: () => _showAddItemDialog(context),
+                    icon: Icon(
+                      Icons.add_circle,
+                      color: isDark ? Colors.white : Colors.black,
+                      size: 28,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            const SizedBox(height: 16),
+            StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('shoes')
                   .orderBy('createdAt', descending: true)
@@ -303,6 +303,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
 
                 return ListView.builder(
+                  shrinkWrap: true, // Add this
+                  physics: const NeverScrollableScrollPhysics(), // Add this
                   padding: const EdgeInsets.all(16),
                   itemCount: snapshot.data!.docs.length,
                   itemBuilder: (context, index) {
@@ -312,8 +314,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -324,27 +326,104 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Row(
+      child: Column(
         children: [
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('shoes').snapshots(),
+          // Revenue Card (Full Width)
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('statistics')
+                .doc('sales')
+                .snapshots(),
             builder: (context, snapshot) {
-              int productCount =
-                  snapshot.hasData ? snapshot.data!.docs.length : 0;
-              return _buildStatCard(
-                icon: Iconsax.shopping_bag5,
-                title: 'Products',
-                value: productCount.toString(),
-                color: primaryColor,
+              final totalRevenue = snapshot.data?['total'] ?? 0.0;
+              return Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: primaryColor.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          Icon(Iconsax.money5, color: primaryColor, size: 24),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Total Revenue',
+                      style: GoogleFonts.poppins(
+                        color: primaryColor.withOpacity(0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '\$${totalRevenue.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                        color: primaryColor,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
-          const SizedBox(width: 16),
-          _buildStatCard(
-            icon: Iconsax.money5,
-            title: 'Sales',
-            value: '\$12,450',
-            color: primaryColor,
+          Row(
+            children: [
+              Expanded(
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('statistics')
+                      .doc('sales')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final totalOrders = snapshot.data?['orders'] ?? 0;
+                    return _buildStatCard(
+                      icon: Iconsax.task_square,
+                      title: 'Orders',
+                      value: totalOrders.toString(),
+                      color: primaryColor,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('shoes')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    int productCount =
+                        snapshot.hasData ? snapshot.data!.docs.length : 0;
+                    return _buildStatCard(
+                      icon: Iconsax.shopping_bag5,
+                      title: 'Products',
+                      value: productCount.toString(),
+                      color: primaryColor,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -357,49 +436,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required String value,
     required Color color,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Added this
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              color: color.withOpacity(0.7),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                color: color.withOpacity(0.7),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: color,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              height: 1,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                color: color,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                height: 1,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -467,7 +545,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Text(
                     '\$${data['price']}',
                     style: TextStyle(
-                      color: Colors.green[700],
+                      color: isDark ? Colors.white : Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

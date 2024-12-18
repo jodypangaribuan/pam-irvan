@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
 import '../models/cart_item_model.dart';
 
-class ProductService {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+class ProductService extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance; // Add this line
+  final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
   // Wishlist operations
   Future<void> toggleWishlist(String productId) async {
@@ -47,16 +49,17 @@ class ProductService {
   }
 
   // Cart operations
-  Future<void> addToCart(ProductModel product, [int quantity = 1]) async {
+  Future<void> addToCart(ProductModel product,
+      [int quantity = 1, String size = '']) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     final cartItem = CartItemModel(
       productId: product.id,
       quantity: quantity,
+      product: product,
+      size: size.isEmpty ? product.sizes.first : size,
       price: product.price,
-      name: product.name,
-      imageBase64: product.imageBase64,
     );
 
     await _firestore

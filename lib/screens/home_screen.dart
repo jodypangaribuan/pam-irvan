@@ -12,21 +12,30 @@ import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/profile_drawer.dart';
 import 'detail_screen.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
+import '../widgets/safe_image.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialTab;
+  const HomeScreen({super.key, this.initialTab = 0});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialTab;
+  }
 
   final List<Widget> _screens = [
     const ShopTab(),
@@ -191,9 +200,9 @@ class _ShopTabState extends State<ShopTab> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline,
+                          const Icon(Icons.error_outline,
                               size: 60, color: Colors.grey),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text('Error: ${snapshot.error}'),
                         ],
                       ),
@@ -213,8 +222,8 @@ class _ShopTabState extends State<ShopTab> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Iconsax.box, size: 60, color: Colors.grey),
-                          SizedBox(height: 16),
+                          const Icon(Iconsax.box, size: 60, color: Colors.grey),
+                          const SizedBox(height: 16),
                           Text(
                             _selectedCategory == 'All'
                                 ? 'No products available'
@@ -262,8 +271,8 @@ class _ShopTabState extends State<ShopTab> {
           final isSelected = _selectedCategory == category;
           return Padding(
             padding: EdgeInsets.only(
-              left: category == categories.first ? 0 : 12,
-              right: category == categories.last ? 0 : 12,
+              left: category == categories.first ? 0 : 4,
+              right: category == categories.last ? 0 : 4,
             ),
             child: _buildCategoryChip(category, isSelected),
           );
@@ -277,7 +286,8 @@ class _ShopTabState extends State<ShopTab> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 8), // Reduced padding
       decoration: BoxDecoration(
         color: isSelected
             ? Colors.black
@@ -431,15 +441,35 @@ class _ShopTabState extends State<ShopTab> {
                           ),
                         ),
                         InkWell(
-                          onTap: () {
-                            productService.addToCart(product).then((_) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Added to cart'),
-                                  duration: Duration(seconds: 1),
-                                ),
-                              );
-                            });
+                          onTap: () async {
+                            try {
+                              await productService.addToCart(
+                                  product,
+                                  1,
+                                  product.sizes.isNotEmpty
+                                      ? product.sizes.first
+                                      : '');
+
+                              if (mounted) {
+                                // Add this check
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Added to cart'),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                // Add this check
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error adding to cart: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.all(6),
@@ -795,10 +825,11 @@ class FavoritesTab extends StatelessWidget {
                 ClipRRect(
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(15)),
-                  child: Image.memory(
-                    base64Decode(product.imageBase64),
+                  child: SafeImage(
+                    base64String: product.imageBase64,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
                 Positioned(
@@ -895,319 +926,414 @@ class CartTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final productService = Provider.of<ProductService>(context);
+    final user = FirebaseAuth.instance.currentUser;
 
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          floating: true,
-          title: Text(
-            'Shopping Cart',
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-          ),
-          backgroundColor: isDark ? Colors.grey[900] : Colors.white,
-          elevation: 0,
-          actions: [
-            StreamBuilder<List<CartItemModel>>(
-              stream: productService.watchCart(),
-              builder: (context, snapshot) {
-                final hasItems = (snapshot.data?.isNotEmpty ?? false);
+    if (user == null) {
+      return const Center(child: Text('Please login to view your cart'));
+    }
 
-                return TextButton.icon(
-                  onPressed: hasItems ? () => productService.clearCart() : null,
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: hasItems ? Colors.red : Colors.grey,
-                  ),
-                  label: Text(
-                    'Clear All',
-                    style: TextStyle(
-                      color: hasItems ? Colors.red : Colors.grey,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        StreamBuilder<List<CartItemModel>>(
-          stream: productService.watchCart(),
-          builder: (context, cartSnapshot) {
-            if (cartSnapshot.hasError) {
-              return SliverToBoxAdapter(
-                child: Center(child: Text('Error: ${cartSnapshot.error}')),
-              );
-            }
+    return StreamBuilder<List<CartItemModel>>(
+      stream: productService.watchCart(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
-            if (cartSnapshot.connectionState == ConnectionState.waiting) {
-              return const SliverToBoxAdapter(
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-            final cartItems = cartSnapshot.data ?? [];
+        final cartItems = snapshot.data ?? [];
 
-            if (cartItems.isEmpty) {
-              return const SliverToBoxAdapter(
-                child: Center(child: Text('Your cart is empty')),
-              );
-            }
-
-            return SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) =>
-                    _buildCartItem(context, cartItems[index], productService),
-                childCount: cartItems.length,
+        return CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              floating: true,
+              title: Text(
+                'Shopping Cart',
+                style: GoogleFonts.poppins(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
               ),
-            );
-          },
-        ),
-        SliverToBoxAdapter(
-          child: StreamBuilder<double>(
-            stream: productService.watchCartTotal(),
-            builder: (context, totalSnapshot) {
-              final total = totalSnapshot.data ?? 0.0;
-
-              return Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[850] : Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                      spreadRadius: 1,
+              backgroundColor: isDark ? Colors.grey[900] : Colors.grey[50],
+              elevation: 0,
+              actions: [
+                if (cartItems.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () => productService.clearCart(),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: Text(
+                      'Clear',
+                      style: GoogleFonts.poppins(color: Colors.red),
                     ),
-                  ],
+                  ),
+              ],
+            ),
+            if (cartItems.isEmpty)
+              const SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Iconsax.shopping_bag, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text('Your cart is empty'),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    _buildSummaryRow('Total', '\$${total.toStringAsFixed(2)}',
-                        isDark: isDark, isTotal: true),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: total > 0
-                            ? () {
-                                // Implement checkout logic
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Proceed to Checkout'),
-                      ),
-                    ),
-                  ],
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index == cartItems.length) {
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: _buildCheckoutSection(
+                            context, cartItems, productService),
+                      );
+                    }
+                    return _buildCartItem(
+                        context, cartItems[index], productService);
+                  },
+                  childCount: cartItems.length + 1,
                 ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value,
-      {bool isTotal = false, required bool isDark}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isTotal ? 18 : 16,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 18 : 16,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-      ],
+              ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildCartItem(
       BuildContext context, CartItemModel item, ProductService service) {
-    return Dismissible(
-      key: Key(item.productId),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      onDismissed: (_) => service.removeFromCart(item.productId),
-      child: Builder(builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        return Slidable(
-          endActionPane: ActionPane(
-            motion: const ScrollMotion(),
-            children: [
-              SlidableAction(
-                onPressed: (context) {},
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                icon: Icons.delete,
-                label: 'Delete',
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[850] : Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    color: Colors.grey[100],
-                    child: CachedNetworkImage(
-                      imageUrl: 'https://via.placeholder.com/120',
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(color: Colors.white),
-                      ),
-                    ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: SafeImage(
+                    base64String: item.product.imageBase64,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Nike Air Max 270',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                                maxLines: 2,
-                              ),
-                            ),
-                            const Icon(Icons.delete_outline, color: Colors.red),
-                          ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.product.name,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Size: 42 EU',
-                          style: TextStyle(
-                            color: isDark ? Colors.white60 : Colors.grey[600],
-                            fontSize: 14,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Size: EU ${item.size}',
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '\$${(item.product.price * item.quantity).toStringAsFixed(2)}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '\$199.99',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.grey[800] : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.grey[800]
-                                    : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                    spreadRadius: -2,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.remove,
-                                      size: 16,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.remove,
                                       color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                    onPressed: () {},
+                                          ? Colors.white70
+                                          : Colors.black54),
+                                  onPressed: () =>
+                                      service.updateCartItemQuantity(
+                                          item.productId, item.quantity - 1),
+                                ),
+                                Text(
+                                  item.quantity.toString(),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        isDark ? Colors.white : Colors.black87,
                                   ),
-                                  Text(
-                                    '1',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.add,
                                       color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.add,
-                                      size: 16,
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87,
-                                    ),
-                                    onPressed: () {},
-                                  ),
-                                ],
-                              ),
+                                          ? Colors.white70
+                                          : Colors.black54),
+                                  onPressed: () =>
+                                      service.updateCartItemQuantity(
+                                          item.productId, item.quantity + 1),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        );
-      }),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: isDark ? Colors.white60 : Colors.grey[600],
+              ),
+              onPressed: () => _showDeleteConfirmation(context, item, service),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _showDeleteConfirmation(
+    BuildContext context,
+    CartItemModel item,
+    ProductService service,
+  ) async {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Item'),
+        content: Text('Remove ${item.product.name} from cart?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              service.removeFromCart(item.productId);
+              Navigator.pop(context);
+            },
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckoutSection(
+      BuildContext context, List<CartItemModel> items, ProductService service) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtotal = items.fold<double>(
+        0, (sum, item) => sum + (item.product.price * item.quantity));
+    const shipping = 10.0; // Fixed shipping cost
+    final tax = subtotal * 0.1; // 10% tax
+    final total = subtotal + shipping + tax;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Order Summary',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildSummaryItem(
+              'Subtotal', '\$${subtotal.toStringAsFixed(2)}', isDark),
+          _buildSummaryItem(
+              'Shipping', '\$${shipping.toStringAsFixed(2)}', isDark),
+          _buildSummaryItem('Tax (10%)', '\$${tax.toStringAsFixed(2)}', isDark),
+          const Divider(height: 24),
+          _buildSummaryItem(
+            'Total',
+            '\$${total.toStringAsFixed(2)}',
+            isDark,
+            isTotal: true,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _processCheckout(context, items, service, total),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Checkout (\$${total.toStringAsFixed(2)})',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value, bool isDark,
+      {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: isDark ? Colors.white70 : Colors.grey[600],
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontSize: isTotal ? 16 : 14,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTotal ? 18 : 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _processCheckout(BuildContext context, List<CartItemModel> items,
+      ProductService service, double total) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      // Create order
+      final orderRef = FirebaseFirestore.instance.collection('orders').doc();
+      batch.set(orderRef, {
+        'userId': user.uid,
+        'items': items
+            .map((item) => {
+                  'productId': item.productId,
+                  'quantity': item.quantity,
+                  'size': item.size,
+                  'price': item.product.price,
+                  'name': item.product.name,
+                  'subtotal': item.product.price * item.quantity,
+                })
+            .toList(),
+        'subtotal': items.fold<double>(
+            0, (sum, item) => sum + (item.product.price * item.quantity)),
+        'shipping': 10.0,
+        'tax': total * 0.1,
+        'total': total,
+        'status': 'completed',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update sales statistics
+      final statsRef =
+          FirebaseFirestore.instance.collection('statistics').doc('sales');
+      batch.set(
+          statsRef,
+          {
+            'total': FieldValue.increment(total),
+            'orders': FieldValue.increment(1),
+            'lastUpdated': FieldValue.serverTimestamp(),
+            'monthlyRevenue': {
+              DateTime.now().month.toString(): FieldValue.increment(total),
+            },
+            'dailyOrders': {
+              DateTime.now().day.toString(): FieldValue.increment(1),
+            }
+          },
+          SetOptions(merge: true));
+
+      await batch.commit();
+      await service.clearCart();
+
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Order Successful!'),
+            content: Text('Your order #${orderRef.id} has been placed.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error processing order: $e')),
+        );
+      }
+    }
   }
 }
