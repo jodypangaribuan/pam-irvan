@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import '../models/product_model.dart';
 
 class DetailScreen extends StatefulWidget {
-  const DetailScreen({super.key});
+  final ProductModel product;
+  const DetailScreen({super.key, required this.product});
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
@@ -13,20 +16,16 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  int selectedSize = 41;
+  String? selectedSize;
   bool isFavorite = false;
-  int _selectedColorIndex = 0;
-  final List<Color> _colors = [
-    Colors.black,
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    if (widget.product.sizes.isNotEmpty) {
+      selectedSize = widget.product.sizes.first;
+    }
   }
 
   @override
@@ -62,8 +61,8 @@ class _DetailScreenState extends State<DetailScreen>
                         PageView.builder(
                           itemCount: 3,
                           itemBuilder: (context, index) {
-                            return Image.network(
-                              'https://via.placeholder.com/400',
+                            return Image.memory(
+                              base64Decode(widget.product.imageBase64),
                               fit: BoxFit.cover,
                             );
                           },
@@ -133,7 +132,7 @@ class _DetailScreenState extends State<DetailScreen>
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Nike Air Max 270',
+                                          widget.product.name,
                                           style: GoogleFonts.poppins(
                                             fontSize: 28,
                                             fontWeight: FontWeight.bold,
@@ -146,7 +145,7 @@ class _DetailScreenState extends State<DetailScreen>
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          'Running Collection',
+                                          widget.product.collection,
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             color: isDark
@@ -169,7 +168,7 @@ class _DetailScreenState extends State<DetailScreen>
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Text(
-                                      '\$199.99',
+                                      '\$${widget.product.price.toStringAsFixed(2)}',
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
@@ -182,9 +181,9 @@ class _DetailScreenState extends State<DetailScreen>
                                 ],
                               ),
                               const SizedBox(height: 20),
-                              _buildColorSelector(isDark),
                               const SizedBox(height: 20),
-                              _buildSizeSelector(isDark),
+                              if (widget.product.sizes.isNotEmpty)
+                                _buildSizeSelector(isDark),
                               const SizedBox(height: 20),
                               _buildTabSection(isDark),
                               const SizedBox(height: 100),
@@ -267,59 +266,9 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildColorSelector(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Available Colors',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 50,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _colors.length,
-            itemBuilder: (context, index) {
-              final isSelected = _selectedColorIndex == index;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedColorIndex = index),
-                child: Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  width: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _colors[index],
-                    border: Border.all(
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _colors[index].withOpacity(0.4),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check, color: Colors.white)
-                      : null,
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSizeSelector(bool isDark) {
+    if (widget.product.sizes.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,9 +285,9 @@ class _DetailScreenState extends State<DetailScreen>
           height: 60,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: 6,
+            itemCount: widget.product.sizes.length,
             itemBuilder: (context, index) {
-              final size = 40 + index;
+              final size = widget.product.sizes[index];
               final isSelected = selectedSize == size;
               return GestureDetector(
                 onTap: () {
@@ -371,7 +320,7 @@ class _DetailScreenState extends State<DetailScreen>
                   ),
                   child: Center(
                     child: Text(
-                      'EU $size',
+                      size,
                       style: TextStyle(
                         color: isSelected
                             ? Colors.white
@@ -411,7 +360,7 @@ class _DetailScreenState extends State<DetailScreen>
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'The Nike Air Max 270 delivers visible cushioning under every step. Updated for modern comfort, it nods to the original 1991 Air Max 180 with its exaggerated tongue top and heritage tongue logo.',
+                  widget.product.description,
                   style: GoogleFonts.poppins(
                     color: isDark ? Colors.white70 : Colors.grey[800],
                     height: 1.6,

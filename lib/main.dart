@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:sepatu/services/product_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,6 +13,9 @@ import 'package:sepatu/screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/admin_dashboard_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   // Ensure platform bindings are initialized
@@ -30,8 +34,12 @@ void main() async {
   await SharedPreferences.getInstance();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        Provider(create: (_) => AuthService()),
+        Provider(create: (_) => ProductService()), // Add this line
+      ],
       child: const MyApp(),
     ),
   );
@@ -66,11 +74,37 @@ class MyApp extends StatelessWidget {
           ),
           themeMode:
               themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          initialRoute: '/login',
+          home: StreamBuilder<User?>(
+            stream: context.read<AuthService>().authStateChanges,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasData) {
+                return FutureBuilder<bool>(
+                  future: context.read<AuthService>().isAdmin(),
+                  builder: (context, adminSnapshot) {
+                    if (adminSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return adminSnapshot.data == true
+                        ? const AdminDashboardScreen()
+                        : const HomeScreen();
+                  },
+                );
+              }
+
+              return const LoginScreen();
+            },
+          ),
           routes: {
             '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/home': (context) => const HomeScreen(),
+            '/admin-dashboard': (context) => const AdminDashboardScreen(),
             '/forgot-password': (context) => const ForgotPasswordScreen(),
           },
           debugShowCheckedModeBanner: false,
